@@ -4,6 +4,8 @@ library(dplyr)
 library(igraph)
 library(lubridate)
 
+selectedTeam = "California"
+
 # Run daily
 updateSchedule = function() {
   df = expand.grid(1:15, c('80', '81'))
