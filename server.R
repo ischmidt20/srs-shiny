@@ -1,4 +1,12 @@
-server <- function(input, output) {
+server <- shinyServer(function(input, output, session) {
+  
+  teams = read.csv('teams.csv')$home
+  games = readGames()
+  refreshResult = updateScheduleDay()
+  selectedWeek = refreshResult$currentWeek
+  games[row.names(refreshResult$games), c('week', 'date', 'status', 'statusLong', 'home', 'away')] = refreshResult$games[, c('week', 'date', 'status', 'statusLong', 'home', 'away')]
+  games %>% write.csv('games.csv')
+  inv = getInv(games)
   
   getGames = eventReactive(c(input$team, input$week), {
     importance = getImportance(games, input$team)
@@ -55,5 +63,4 @@ server <- function(input, output) {
         )
     lapply(1:nrow(games), function(x) panel(games[x,]))
   })
-
-}
+})

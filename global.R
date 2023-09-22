@@ -6,27 +6,37 @@ library(lubridate)
 
 selectedTeam = "California"
 
-# Run daily
-updateSchedule = function() {
-  df = expand.grid(1:15, c('80', '81'))
-  games = mapply(function(week, group) fromJSON(paste0('http://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard?dates=2023&week=', week, '&groups=', group, '&limit=300'))$events, df$Var1, df$Var2) %>% bind_rows()
+processGames = function(games) {
   games$week = games$week$number
   games$statusLong = games$status$type$shortDetail
   games$status = games$status$type$state
   games$date = with_tz(as_datetime(games$date, format = '%Y-%m-%dT%H:%MZ', tz = 'UTC'), 'US/Eastern')
   games[, c('home', 'away')] = lapply(games$competitions, function(x) x$competitors[[1]]$team$location) %>% do.call(rbind, .)
   games = games[!(duplicated(games$id) | (games$away == 'TBD') | (games$home == 'TBD')),]
-  games = games[order(games$date), c('id', 'week', 'date', 'status', 'statusLong', 'home', 'away')]
-  teams = count(games, home, sort = TRUE) %>% filter(n >= 4) %>% arrange(home) %>% select(home)
-  games$include = (games$away %in% teams$home) & (games$home %in% teams$home)
-  # teams %>% write.csv('teams.csv', row.names = FALSE)
-  games %>% write.csv('games.csv', row.names = FALSE)
+  row.names(games) = games$id
+  games = games[order(games$date), c('week', 'date', 'status', 'statusLong', 'home', 'away')]
   return(games)
+}
+
+# Run daily
+updateScheduleSeason = function() {
+  teams = read.csv('teams.csv')$home
+  df = expand.grid(1:15, c('80', '81'))
+  games = mapply(function(week, group) fromJSON(paste0('http://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard?dates=2023&week=', week, '&groups=', group, '&limit=300'))$events, df$Var1, df$Var2) %>% bind_rows() %>% processGames()
+  teams = count(games, home, sort = TRUE) %>% filter(n >= 4) %>% arrange(home) %>% select(home)
+  # teams %>% write.csv('teams.csv', row.names = FALSE)
+  games$include = (games$away %in% teams$home) & (games$home %in% teams$home)
+  games %>% write.csv('games.csv')
+}
+
+updateScheduleDay = function() {
+  gamesWeek = lapply(c('80', '81'), function(group) fromJSON(paste0('http://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard?groups=', group, '&limit=300'))$events) %>% bind_rows() %>% processGames()
+  return(list(currentWeek = gamesWeek$week[1], games = gamesWeek))
 }
 
 # Run upon load
 readGames = function() {
-  games = read.csv('games.csv') %>% mutate(status = factor(status, levels = c('in', 'pre', 'post')))
+  games = read.csv('games.csv', row.names = 1) %>% mutate(status = factor(status, levels = c('in', 'pre', 'post')))
   return(games)
 }
 
@@ -50,8 +60,3 @@ getImportance = function(games, team) {
 
 backgroundRed = "background-color:rgba(192, 0, 0, 0.5)"
 backgroundGreen = "background-color:rgba(112, 173, 71, 0.5)"
-
-games = updateSchedule()
-games = readGames()
-inv = getInv(games)
-teams = games %>% filter(include) %>% pull(home) %>% unique() %>% sort()

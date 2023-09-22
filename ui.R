@@ -6,7 +6,7 @@ ui <- fluidPage(
   sidebarLayout(
     sidebarPanel(
       selectInput("team", "Team", selected = selectedTeam, choices = teams),
-      selectInput("week", "Week", selected = 1, choices = setNames(1:15, paste0("Week ", 1:15)))
+      selectInput("week", "Week", selected = selectedWeek, choices = setNames(1:15, paste0("Week ", 1:15)))
     ),
     
     mainPanel(
