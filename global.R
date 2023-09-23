@@ -60,3 +60,10 @@ getImportance = function(games, team) {
 
 backgroundRed = "background-color:rgba(192, 0, 0, 0.5)"
 backgroundGreen = "background-color:rgba(112, 173, 71, 0.5)"
+
+teams = read.csv('teams.csv')$home
+games = readGames()
+refreshResult = updateScheduleDay()
+selectedWeek = refreshResult$currentWeek
+games[row.names(refreshResult$games), c('week', 'date', 'status', 'statusLong', 'home', 'away')] = refreshResult$games[, c('week', 'date', 'status', 'statusLong', 'home', 'away')]
+inv = getInv(games)
