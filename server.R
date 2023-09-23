@@ -5,7 +5,6 @@ server <- shinyServer(function(input, output, session) {
   refreshResult = updateScheduleDay()
   selectedWeek = refreshResult$currentWeek
   games[row.names(refreshResult$games), c('week', 'date', 'status', 'statusLong', 'home', 'away')] = refreshResult$games[, c('week', 'date', 'status', 'statusLong', 'home', 'away')]
-  games %>% write.csv('games.csv')
   inv = getInv(games)
   
   getGames = eventReactive(c(input$team, input$week), {
