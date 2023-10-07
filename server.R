@@ -62,4 +62,10 @@ server <- shinyServer(function(input, output, session) {
         )
     lapply(1:nrow(games), function(x) panel(games[x,]))
   })
+  
+  autoInvalidate <- reactiveTimer(10000)
+  observe({
+    autoInvalidate()
+    cat(".")
+  })
 })
