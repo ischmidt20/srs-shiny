@@ -26,7 +26,7 @@ updateScheduleSeasonFootball = function() {
   teams = count(games, home, sort = TRUE) %>% filter(n >= 4) %>% arrange(home) %>% select(home)
   # teams %>% write.csv('teams.csv', row.names = FALSE)
   games$include = (games$away %in% teams$home) & (games$home %in% teams$home)
-  games %>% write.csv('games.csv')
+  games %>% write.csv('gamesFootball.csv')
 }
 
 updateScheduleDayFootball = function() {
@@ -35,8 +35,8 @@ updateScheduleDayFootball = function() {
 }
 
 # Run upon load
-readGames = function() {
-  games = read.csv('games.csv', row.names = 1) %>% mutate(status = factor(status, levels = c('in', 'pre', 'post')))
+readGames = function(sport) {
+  games = read.csv(paste0('games', sport, '.csv'), row.names = 1) %>% mutate(status = factor(status, levels = c('in', 'pre', 'post')))
   return(games)
 }
 
@@ -61,8 +61,8 @@ getImportance = function(games, team) {
 backgroundRed = "background-color:rgba(192, 0, 0, 0.5)"
 backgroundGreen = "background-color:rgba(112, 173, 71, 0.5)"
 
-teams = read.csv('teams.csv')$home
-games = readGames()
+teams = read.csv('teamsFootball.csv')$home
+games = readGames('Football')
 refreshResult = updateScheduleDayFootball()
 selectedWeek = refreshResult$currentWeek
 games[row.names(refreshResult$games), c('week', 'date', 'status', 'statusLong', 'home', 'away')] = refreshResult$games[, c('week', 'date', 'status', 'statusLong', 'home', 'away')]
