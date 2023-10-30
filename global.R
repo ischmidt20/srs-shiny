@@ -6,6 +6,40 @@ library(lubridate)
 
 selectedTeam <- "California"
 
+processGamesBasketball <- function(games) {
+  games$statusLong <- games$status$type$shortDetail
+  games$status <- games$status$type$state
+  games$date <- with_tz(as_datetime(games$date, format = "%Y-%m-%dT%H:%MZ", tz = "UTC"), "US/Eastern")
+  games$week <- trunc(games$date, unit = "day")
+  games[, c("home", "away")] <- lapply(games$competitions, function(x) x$competitors[[1]]$team$location) %>% do.call(rbind, .)
+  games <- games[!(duplicated(games$id) | (games$away == "TBD") | (games$home == "TBD")), ]
+  row.names(games) <- games$id
+  games <- games[order(games$date), c("week", "date", "status", "statusLong", "home", "away")]
+  return(games)
+}
+
+# Run daily
+updateScheduleSeasonBasketball <- function() {
+  teams <- read.csv("teamsBasketball.csv")$home
+  dates <- format(seq(as.Date("2023/11/1"), as.Date("2024/4/1"), by = "day"), "%Y%m%d")
+  games <- mapply(function(date) fromJSON(paste0("http://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard?dates=", date, "&groups=50&limit=357"))$events, dates) %>%
+    bind_rows() %>%
+    processGamesBasketball()
+  teams <- count(games, home, sort = TRUE) %>%
+    filter(n >= 4) %>%
+    arrange(home) %>%
+    select(home)
+  teams %>% write.csv("teamsBasketball.csv", row.names = FALSE)
+  games$include <- (games$away %in% teams$home) & (games$home %in% teams$home)
+  games %>% write.csv("gamesBasketball.csv")
+}
+
+updateScheduleBasketball <- function() {
+  gamesWeek <- fromJSON(paste0("http://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard?groups=50&limit=357"))$events %>%
+    processGamesBasketball()
+  return(list(currentWeek = gamesWeek$week[1], games = gamesWeek))
+}
+
 processGamesFootball <- function(games) {
   games$week <- games$week$number
   games$statusLong <- games$status$type$shortDetail
