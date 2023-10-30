@@ -2,7 +2,7 @@ server <- shinyServer(function(input, output, session) {
   
   teams = read.csv('teams.csv')$home
   games = readGames()
-  refreshResult = updateScheduleDay()
+  refreshResult = updateScheduleDayFootball()
   selectedWeek = refreshResult$currentWeek
   games[row.names(refreshResult$games), c('week', 'date', 'status', 'statusLong', 'home', 'away')] = refreshResult$games[, c('week', 'date', 'status', 'statusLong', 'home', 'away')]
   inv = getInv(games)

@@ -10,7 +10,6 @@ ui <- fluidPage(
     ),
     
     mainPanel(
-      #tableOutput("games"),
       uiOutput("games")
     )
   )

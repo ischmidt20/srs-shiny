@@ -6,7 +6,7 @@ library(lubridate)
 
 selectedTeam = "California"
 
-processGames = function(games) {
+processGamesFootball = function(games) {
   games$week = games$week$number
   games$statusLong = games$status$type$shortDetail
   games$status = games$status$type$state
@@ -19,18 +19,18 @@ processGames = function(games) {
 }
 
 # Run daily
-updateScheduleSeason = function() {
+updateScheduleSeasonFootball = function() {
   teams = read.csv('teams.csv')$home
   df = expand.grid(1:15, c('80', '81'))
-  games = mapply(function(week, group) fromJSON(paste0('http://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard?dates=2023&week=', week, '&groups=', group, '&limit=300'))$events, df$Var1, df$Var2) %>% bind_rows() %>% processGames()
+  games = mapply(function(week, group) fromJSON(paste0('http://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard?dates=2023&week=', week, '&groups=', group, '&limit=300'))$events, df$Var1, df$Var2) %>% bind_rows() %>% processGamesFootball()
   teams = count(games, home, sort = TRUE) %>% filter(n >= 4) %>% arrange(home) %>% select(home)
   # teams %>% write.csv('teams.csv', row.names = FALSE)
   games$include = (games$away %in% teams$home) & (games$home %in% teams$home)
   games %>% write.csv('games.csv')
 }
 
-updateScheduleDay = function() {
-  gamesWeek = lapply(c('80', '81'), function(group) fromJSON(paste0('http://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard?groups=', group, '&limit=300'))$events) %>% bind_rows() %>% processGames()
+updateScheduleDayFootball = function() {
+  gamesWeek = lapply(c('80', '81'), function(group) fromJSON(paste0('http://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard?groups=', group, '&limit=300'))$events) %>% bind_rows() %>% processGamesFootball()
   return(list(currentWeek = gamesWeek$week[1], games = gamesWeek))
 }
 
@@ -63,7 +63,7 @@ backgroundGreen = "background-color:rgba(112, 173, 71, 0.5)"
 
 teams = read.csv('teams.csv')$home
 games = readGames()
-refreshResult = updateScheduleDay()
+refreshResult = updateScheduleDayFootball()
 selectedWeek = refreshResult$currentWeek
 games[row.names(refreshResult$games), c('week', 'date', 'status', 'statusLong', 'home', 'away')] = refreshResult$games[, c('week', 'date', 'status', 'statusLong', 'home', 'away')]
 inv = getInv(games)
