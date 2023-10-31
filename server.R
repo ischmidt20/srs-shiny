@@ -72,7 +72,7 @@ server <- shinyServer(function(input, output, session) {
         status,
         desc(abs(importance))
       )
-    lapply(1:nrow(games), function(x) panel(games[x, ]))
+    lapply(seq_len(nrow(games)), function(x) panel(games[x, ]))
   })
 
   output$games2 <- renderUI({
@@ -81,7 +81,7 @@ server <- shinyServer(function(input, output, session) {
         status,
         desc(abs(importance))
       )
-    lapply(1:nrow(games), function(x) panel(games[x, ]))
+    lapply(seq_len(nrow(games)), function(x) panel(games[x, ]))
   })
 
   autoInvalidate <- reactiveTimer(10000)
