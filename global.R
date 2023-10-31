@@ -34,7 +34,7 @@ updateScheduleSeasonBasketball <- function() {
   games %>% write.csv("gamesBasketball.csv")
 }
 
-updateScheduleBasketball <- function() {
+updateScheduleDayBasketball <- function() {
   gamesWeek <- fromJSON(paste0("http://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard?groups=50&limit=357"))$events %>%
     processGamesBasketball()
   return(list(currentWeek = gamesWeek$week[1], games = gamesWeek))
@@ -78,6 +78,10 @@ updateScheduleDayFootball <- function() {
 # Run upon load
 readGames <- function(sport) {
   games <- read.csv(paste0("games", sport, ".csv"), row.names = 1) %>% mutate(status = factor(status, levels = c("in", "pre", "post")))
+  games$date <- strptime(games$date, format = "%Y-%m-%d %H:%M:%S", tz = "US/Eastern")
+  if (sport == "Basketball") {
+    games$week <- strptime(games$week, format = "%Y-%m-%d")
+  }
   return(games)
 }
 
@@ -101,7 +105,7 @@ getInv <- function(games) {
   return(inv)
 }
 
-getImportance <- function(games, team) {
+getImportance <- function(games, team, inv) {
   importances <- games %>%
     filter(include == TRUE) %>%
     select(c(home, away)) %>%
@@ -112,9 +116,14 @@ getImportance <- function(games, team) {
 backgroundRed <- "background-color:rgba(192, 0, 0, 0.5)"
 backgroundGreen <- "background-color:rgba(112, 173, 71, 0.5)"
 
-teams <- read.csv("teamsFootball.csv")$home
-games <- readGames("Football")
+teams <- sort(union(read.csv("teamsFootball.csv")$home, read.csv("teamsBasketball.csv")$home))
+gamesFootball <- readGames("Football")
 refreshResult <- updateScheduleDayFootball()
 selectedWeek <- refreshResult$currentWeek
-games[row.names(refreshResult$games), c("week", "date", "status", "statusLong", "home", "away")] <- refreshResult$games[, c("week", "date", "status", "statusLong", "home", "away")]
-inv <- getInv(games)
+gamesFootball[row.names(refreshResult$games), c("week", "date", "status", "statusLong", "home", "away")] <- refreshResult$games[, c("week", "date", "status", "statusLong", "home", "away")]
+invFootball <- getInv(gamesFootball)
+
+gamesBasketball <- readGames("Basketball")
+refreshResult <- updateScheduleDayBasketball()
+gamesBasketball[row.names(refreshResult$games), c("week", "date", "status", "statusLong", "home", "away")] <- refreshResult$games[, c("week", "date", "status", "statusLong", "home", "away")]
+invBasketball <- getInv(gamesBasketball)

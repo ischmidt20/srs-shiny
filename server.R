@@ -1,16 +1,30 @@
 server <- shinyServer(function(input, output, session) {
-  teams <- read.csv("teamsFootball.csv")$home
-  games <- readGames("Football")
+  teams <- sort(union(read.csv("teamsFootball.csv")$home, read.csv("teamsBasketball.csv")$home))
+  gamesFootball <- readGames("Football")
   refreshResult <- updateScheduleDayFootball()
   selectedWeek <- refreshResult$currentWeek
-  games[row.names(refreshResult$games), c("week", "date", "status", "statusLong", "home", "away")] <- refreshResult$games[, c("week", "date", "status", "statusLong", "home", "away")]
-  inv <- getInv(games)
+  gamesFootball[row.names(refreshResult$games), c("week", "date", "status", "statusLong", "home", "away")] <- refreshResult$games[, c("week", "date", "status", "statusLong", "home", "away")]
+  invFootball <- getInv(gamesFootball)
 
-  getGames <- eventReactive(c(input$team, input$week), {
-    importance <- getImportance(games, input$team)
-    games[games$include == TRUE, "importance"] <- importance
-    games %>%
-      filter(week == input$week) %>%
+  gamesBasketball <- readGames("Basketball")
+  refreshResult <- updateScheduleDayBasketball()
+  selectedWeek <- refreshResult$currentWeek
+  gamesBasketball[row.names(refreshResult$games), c("week", "date", "status", "statusLong", "home", "away")] <- refreshResult$games[, c("week", "date", "status", "statusLong", "home", "away")]
+  invBasketball <- getInv(gamesBasketball)
+
+  getGamesFootball <- eventReactive(c(input$team, input$week), {
+    importance <- getImportance(gamesFootball, input$team, invFootball)
+    gamesFootball[gamesFootball$include == TRUE, "importance"] <- importance
+    gamesFootball %>%
+      filter((week == input$week)) %>%
+      return()
+  })
+
+  getGamesBasketball <- eventReactive(c(input$team, input$date), {
+    importance <- getImportance(gamesBasketball, input$team, invBasketball)
+    gamesBasketball[gamesBasketball$include == TRUE, "importance"] <- importance
+    gamesBasketball %>%
+      filter((week == input$date)) %>%
       return()
   })
 
@@ -53,7 +67,16 @@ server <- shinyServer(function(input, output, session) {
   }
 
   output$games <- renderUI({
-    games <- getGames() %>%
+    games <- getGamesFootball() %>%
+      arrange(
+        status,
+        desc(abs(importance))
+      )
+    lapply(1:nrow(games), function(x) panel(games[x, ]))
+  })
+
+  output$games2 <- renderUI({
+    games <- getGamesBasketball() %>%
       arrange(
         status,
         desc(abs(importance))
