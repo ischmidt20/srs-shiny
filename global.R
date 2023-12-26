@@ -22,7 +22,7 @@ processGamesBasketball <- function(games) {
 updateScheduleSeasonBasketball <- function() {
   teams <- read.csv("teamsBasketball.csv")$home
   dates <- format(seq(as.Date("2023/11/1"), as.Date("2024/4/1"), by = "day"), "%Y%m%d")
-  games <- mapply(function(date) fromJSON(paste0("http://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard?dates=", date, "&groups=50&limit=357"))$events, dates) %>%
+  games <- mapply(function(date) fromJSON(paste0("http://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard?dates=", date, "&groups=50&limit=357"))$events, dates, SIMPLIFY = FALSE) %>%
     bind_rows() %>%
     processGamesBasketball()
   teams <- count(games, home, sort = TRUE) %>%
@@ -56,7 +56,7 @@ processGamesFootball <- function(games) {
 updateScheduleSeasonFootball <- function() {
   teams <- read.csv("teamsFootball.csv")$home
   df <- expand.grid(1:15, c("80", "81"))
-  games <- mapply(function(week, group) fromJSON(paste0("http://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard?dates=2023&week=", week, "&groups=", group, "&limit=300"))$events, df$Var1, df$Var2) %>%
+  games <- mapply(function(week, group) fromJSON(paste0("http://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard?dates=2023&week=", week, "&groups=", group, "&limit=300"))$events, df$Var1, df$Var2, SIMPLIFY = FALSE) %>%
     bind_rows() %>%
     processGamesFootball()
   teams <- count(games, home, sort = TRUE) %>%
